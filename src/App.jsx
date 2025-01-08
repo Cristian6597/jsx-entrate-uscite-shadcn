@@ -5,6 +5,7 @@ import Uscite from "./components/Uscite";
 import Modal from "./components/Modal";
 
 
+
 function App() {
   const [entries, setEntries] = useState([]); //gestisce le entrate
   const [openModal, setOpenModal] = useState(false); //gestisce il modal
