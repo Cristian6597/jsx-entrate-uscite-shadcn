@@ -8,16 +8,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowDownToLine, Bell, Pen, Trash2 } from "lucide-react";
+import { ArrowDownToLine, Bell, Pen, Trash2, Check, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "./ui/label";
 
-function Uscite({ entries, removeEntry }) {
+function Uscite({ entries, removeEntry, updateEntry }) {
   const [empty, setEmpty] = useState(false);
+  const [editRowId, setEditRowId] = useState(null); // Stato per tracciare la riga in modifica
+  const [editedLocation, setEditedLocation] = useState(""); // Stato per il valore dell'input
 
-  // Verifica se la lista entries è vuota e aggiorna lo stato 'empty' di conseguenza
   useEffect(() => {
-    setEmpty(entries.length === 0); //Controlla se è vuoto
-  }, [entries]); // Questo effetto viene eseguito ogni volta che la lista entries cambia
+    setEmpty(entries.length === 0);
+  }, [entries]);
+
+  const handleEdit = (id, currentLocation) => {
+    setEditRowId(id);
+    setEditedLocation(currentLocation); // Prepopola l'input con il valore attuale
+  };
+
+  const handleSave = (id) => {
+    updateEntry(id, { location: editedLocation }); // Aggiorna l'entry tramite prop
+    setEditRowId(null); // Esci dalla modalità modifica
+  };
+
+  const handleCancel = () => {
+    setEditRowId(null); // Esci dalla modalità modifica senza salvare
+    setEditedLocation("");
+  };
 
   return (
     <div className="w-1/2">
@@ -31,29 +48,61 @@ function Uscite({ entries, removeEntry }) {
             <TableCaption></TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Date</TableHead>
+                <TableHead className="text-left w-[120px]">Data</TableHead>
                 <TableHead className="text-center">Luogo</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right w-[200px]">Uscita</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {entries.map((entry) => (
                 <TableRow key={entry.id}>
-                  <TableCell className="font-medium">{entry.data}</TableCell>
+                  {/* Data allineata a sinistra */}
+                  <TableCell className="text-left font-medium">
+                    {entry.data}
+                  </TableCell>
+
+                  {/* Input o luogo centrato */}
                   <TableCell className="text-center">
-                    {entry.location}
-                  </TableCell>
-                  <TableCell className="text-right text-red-500">
-                    {entry.spesa.toFixed(2)} €
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-row size-10 mt-3 gap-1">
-                      <Pen className="text-blue-500 hover:text-blue-600" />
-                      <Trash2
-                        className="text-red-500 hover:text-red-600"
-                        onClick={() => removeEntry(entry.id)}
+                    {editRowId === entry.id ? (
+                      <input
+                        type="text"
+                        value={editedLocation}
+                        onChange={(e) => setEditedLocation(e.target.value)}
+                        className="border rounded px-2 py-1 w-full max-w-[150px] mx-auto"
                       />
-                    </div>
+                    ) : (
+                      <Label className="block">{entry.location}</Label>
+                    )}
+                  </TableCell>
+
+                  {/* Amount e icone allineati a destra */}
+                  <TableCell className="text-right flex justify-end items-center gap-2">
+                    <span className="text-red-500">
+                      {entry.spesa.toFixed(2)} €
+                    </span>
+                    {editRowId === entry.id ? (
+                      <>
+                        <Check
+                          className="text-green-500 hover:text-green-600 cursor-pointer scale-75"
+                          onClick={() => handleSave(entry.id)}
+                        />
+                        <X
+                          className="text-red-500 hover:text-red-600 cursor-pointer scale-75"
+                          onClick={handleCancel}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Pen
+                          className="text-blue-500 hover:text-blue-600 cursor-pointer scale-75"
+                          onClick={() => handleEdit(entry.id, entry.location)}
+                        />
+                        <Trash2
+                          className="text-red-500 hover:text-red-600 cursor-pointer  scale-75"
+                          onClick={() => removeEntry(entry.id)}
+                        />
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

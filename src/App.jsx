@@ -5,47 +5,51 @@ import Uscite from "./components/Uscite";
 import Modal from "./components/Modal";
 
 function App() {
-  const [entries, setEntries] = useState([]); //gestisce le entrate
-  const [openModal, setOpenModal] = useState(false); //gestisce il modal
-  const [sottraeUscite, setSottraeUscite] = useState(0); //gestisce la somma delle uscite
-  const [sommaUscite, setSommaUscite] = useState(0); //gestisce la somma delle entrate
+  const [entries, setEntries] = useState([]); // Gestisce le entrate/uscite
+  const [openModal, setOpenModal] = useState(false); // Gestisce il modal
+  const [sottraeUscite, setSottraeUscite] = useState(0); // Somma uscite
+  const [sommaUscite, setSommaUscite] = useState(0); // Somma entrate
 
-  useEffect(() => { //fetch per le entrate
+  useEffect(() => {
+    // Fetch per le entrate/uscite dal database
     fetchEntries();
   }, []);
 
   useEffect(() => {
-    // Calcola la somma delle uscite ogni volta che entries cambia
+    // Calcola la somma delle uscite ogni volta che `entries` cambia
     const sottrae = entries
-      .filter((entry) => entry.spesa < 0) // Filtra solo le uscite
-      .reduce((acc, entry) => acc + entry.spesa, 0); // Sottrae i valori, lo 0 indica il valore di partenza
+      .filter((entry) => entry.spesa < 0)
+      .reduce((acc, entry) => acc + entry.spesa, 0);
     setSottraeUscite(sottrae);
   }, [entries]);
 
   useEffect(() => {
-    // Calcola la somma delle entrate ogni volta che entries cambia
+    // Calcola la somma delle entrate ogni volta che `entries` cambia
     const somma = entries
-      .filter((entry) => entry.spesa > 0) // Filtra solo le entrate
-      .reduce((acc, entry) => acc + entry.spesa, 0); // somma i valori
+      .filter((entry) => entry.spesa > 0)
+      .reduce((acc, entry) => acc + entry.spesa, 0);
     setSommaUscite(somma);
   }, [entries]);
 
-  const fetchEntries = () => { //fetch per prendere i dati dal database
+  const fetchEntries = () => {
+    // Fetch per prendere i dati dal database
     fetch("http://localhost:3000/lists")
       .then((res) => res.json())
       .then((lists) => {
-        console.log("Fetched lists:", lists);
-        const formattedLists = lists.map((item) => ({
-          ...item,
-          spesa: parseFloat(item.spesa.replace("€", "").replace(",", ".")), // Converte 'spesa' in numero
-        }));
+        const formattedLists = lists.map((item) => {
+          const spesaValue = item.spesa != null ? item.spesa.toString().replace("€", "").replace(",", ".") : "0"; //controllo per vedere se spesa è definito (dava errore perchè modificando un campo e mettendolo null si rompeva tutto)
+          return {
+            ...item,
+            spesa: parseFloat(spesaValue),
+          };
+        });
         setEntries(formattedLists);
       })
-      .catch((error) => console.error("Error fetching data:", error));
+      .catch((error) => console.error("Errore durante il fetch:", error));
   };
 
-  const addEntry = (newEntry) => { //aggiunge un nuovo elemento al db
-    console.log("Aggiungo nuova entrata: ", newEntry);
+  const addEntry = (newEntry) => {
+    // Aggiunge un nuovo elemento al database
     fetch("http://localhost:3000/lists", {
       method: "POST",
       headers: {
@@ -53,50 +57,59 @@ function App() {
       },
       body: JSON.stringify(newEntry),
     })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Successo:", data);
+      .then((res) => res.json())
+      .then(() => {
         fetchEntries(); // Aggiorna la lista dopo l'aggiunta
-        setOpenModal(false); // Chiudi il modal dopo l'aggiunta
+        setOpenModal(false); // Chiudi il modal
       })
-      .catch((error) => {
-        console.error("Errore:", error);
-      });
+      .catch((error) => console.error("Errore durante l'aggiunta:", error));
   };
 
-  // Funzione per rimuovere una voce dalla lista
   const removeEntry = (id) => {
-    console.log("Rimozione del parametro con l'id: ", id); // Log per capire se id è corretto (funziona)
-    const updatedEntries = entries.filter(entry => entry.id !== id); //con filter rimuove l'oggetto
-    setEntries(updatedEntries); // Aggiorna lo stato con la nuova lista
-
-    // Chiamata per eliminare dal backend
-    fetch(`http://localhost:3000/lists/${id}`, { //seleziona l'oggetto tramite id
+    // Rimuove un elemento dal database
+    fetch(`http://localhost:3000/lists/${id}`, {
       method: "DELETE",
     })
-      .then((response) => {
-        if (response.ok) {
-          console.log(`L'oggetto con l' id ${id} è stato rimosso.`);
+      .then((res) => {
+        if (res.ok) {
+          fetchEntries(); // Aggiorna la lista dopo la rimozione
         } else {
-          console.error("Errore durante la rimozione:", response);
+          console.error("Errore durante la rimozione:", res);
         }
       })
-      .catch((error) => {
-        console.error("Errore durante la rimozione:", error);
-      });
+      .catch((error) => console.error("Errore durante la rimozione:", error));
   };
 
-  const uscite = entries.filter((entry) => entry.spesa < 0); //filtra se negativo manda alle uscite
-  const entrate = entries.filter((entry) => entry.spesa >= 0); //filtra se positivo manda alle entrate
+  const updateEntry = (id, updatedData) => {
+    // Modifica un elemento nel database
+    fetch(`http://localhost:3000/lists/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    })
+      .then((res) => {
+        if (res.ok) {
+          fetchEntries(); // Aggiorna la lista dopo la modifica
+        } else {
+          console.error("Errore durante la modifica:", res);
+        }
+      })
+      .catch((error) => console.error("Errore durante la modifica:", error));
+  };
+
+  const uscite = entries.filter((entry) => entry.spesa < 0); // Filtra le uscite
+  const entrate = entries.filter((entry) => entry.spesa >= 0); // Filtra le entrate
 
   return (
     <>
       <div>
         <Navsuperiore onOpenModal={() => setOpenModal(true)} />
       </div>
-      <div className="flex flex-row justify-evenly">
-        <Uscite entries={uscite} removeEntry={removeEntry} />
-        <Entrate entries={entrate} removeEntry={removeEntry} />
+      <div className="flex flex-row justify-evenly scale-95">
+        <Uscite entries={uscite} removeEntry={removeEntry} updateEntry={updateEntry} />
+        <Entrate entries={entrate} removeEntry={removeEntry} updateEntry={updateEntry} />
       </div>
       <Modal
         open={openModal}
@@ -104,8 +117,8 @@ function App() {
         onAddEntry={addEntry}
       />
       <div className="flex flex-row justify-evenly mt-5">
-        <h1>Totale Uscite: {sottraeUscite.toFixed(2)} €</h1>
-        <h1>Totale: {sommaUscite.toFixed(2)} €</h1>
+        <h1>Totale Uscite: <span className="text-red-600">{sottraeUscite.toFixed(2)}€</span> </h1>
+        <h1>Totale Entrate: <span className="text-green-600">{sommaUscite.toFixed(2)}€</span></h1>
       </div>
     </>
   );

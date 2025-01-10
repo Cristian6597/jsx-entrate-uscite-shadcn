@@ -1,16 +1,9 @@
 {
   "lists": [
     {
-      "id": "2",
-      "title": "Compiti",
-      "location": "Conad",
-      "spesa": "-120€",
-      "data": "2024-01-02"
-    },
-    {
       "id": "3",
       "title": "adas",
-      "location": "Barbiere",
+      "location": "Barbiere223",
       "spesa": "-40€",
       "data": "2023-05-19"
     },
@@ -64,11 +57,11 @@
       "data": "2025-01-17"
     },
     {
-      "id": "m5o3ti89",
-      "title": "prova della spesa",
-      "location": "casa mia",
-      "spesa": "20.00€",
-      "data": "2025-01-29"
+      "id": "m5p9ow14",
+      "title": "123",
+      "location": "123",
+      "spesa": "123.00€",
+      "data": "2025-01-09"
     }
   ]
 }
